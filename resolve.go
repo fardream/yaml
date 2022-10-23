@@ -18,6 +18,7 @@ package yaml
 import (
 	"encoding/base64"
 	"math"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -207,7 +208,35 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 					return floatTag, floatv
 				}
 			}
-			if strings.HasPrefix(plain, "0b") {
+			if strings.HasPrefix(plain, "0x") {
+				intv, err := strconv.ParseInt(plain[2:], 16, 64)
+				if err == nil {
+					if intv == int64(int(intv)) {
+						return intTag, int(intv)
+					} else {
+						return intTag, intv
+					}
+				} else {
+					b := big.Int{}
+					_, s := b.SetString(plain[2:], 16)
+					if s {
+						return intTag, &b
+					}
+				}
+				uintv, err := strconv.ParseUint(plain[2:], 16, 64)
+				if err == nil {
+					return intTag, uintv
+				}
+			} else if strings.HasPrefix(plain, "-0x") {
+				intv, err := strconv.ParseInt("-"+plain[3:], 16, 64)
+				if err == nil {
+					if true || intv == int64(int(intv)) {
+						return intTag, int(intv)
+					} else {
+						return intTag, intv
+					}
+				}
+			} else if strings.HasPrefix(plain, "0b") {
 				intv, err := strconv.ParseInt(plain[2:], 2, 64)
 				if err == nil {
 					if intv == int64(int(intv)) {
